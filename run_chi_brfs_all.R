@@ -1,7 +1,7 @@
 #combine processed BRFSS datasets(demgroups and crosstabs, trends, wa)
 rm(list=ls())
 pacman::p_load(dplyr, foreign, survey, srvyr, epiDisplay, data.table, janitor, rads, labelled, dtsurvey, DBI)
-setwd("c:/R_learning/CHI") 
+setwd("c:/R_learning/CHI_brfss") 
 
 chi_brfs1 <- read.csv("resultx.csv")
 chi_brfs2 <- read.csv("resultt.csv")

@@ -1,7 +1,7 @@
 #compare old data in SQL with new data 
 rm(list=ls())
 pacman::p_load(dplyr, foreign, odbc, DBI, dbplyr, epiDisplay, data.table, janitor, rads, naniar)
-setwd("c:/R_learning/CHI") 
+setwd("c:/R_learning/CHI_brfss") 
 # connect to sql----
 db50 <- odbc::dbConnect(odbc::odbc(),
                         Driver = "SQL Server",

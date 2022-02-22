@@ -1,7 +1,7 @@
 #generate BRFSS data for most recent year
 rm(list=ls())
 pacman::p_load(dplyr, foreign, survey, srvyr, epiDisplay, data.table, janitor, rads, labelled, dtsurvey)
-setwd("c:/R_learning/CHI")
+setwd("c:/R_learning/CHI_brfss")
 
 #Read Stata file, can only translate Stata version 12 or earlier, other packages can read later versions
 brfsraw <- read.dta(file="S:/WORK/surveys/brfs/prog_all/kc0020_finalz.dta", warn.missing.labels = FALSE)

@@ -1,7 +1,7 @@
 ##generate BRFSS data for CHI with custom/crosstab data
 rm(list=ls())
 pacman::p_load(dplyr, foreign, survey, srvyr, epiDisplay, data.table, janitor, rads, labelled, dtsurvey)
-setwd("c:/R_learning/CHI")
+setwd("c:/R_learning/CHI_brfss")
 
 #Read Stata file, can only translate Stata version 12 or earlier, other packages can read later versions
 brfsraw <- read.dta(file="S:/WORK/surveys/brfs/prog_all/kc0020_finalz.dta", warn.missing.labels = FALSE)
@@ -120,7 +120,7 @@ result2$cat2 <- "Overall"
 result2$cat2_group <- "Overall"
 
 #-----run crosstab by age5-----
-age5by <- c("sex","LGB","race3","hispanic","race4","income6","veteran","ccreg","bigcities","hracode")
+age5by <- c("sex","LGB","race3","hispanic","race4","income6","veteran","ccreg")
 res_byage = rbindlist(lapply(X = as.list(age5by),
                               FUN = function(X){
                                 message(X)
@@ -140,7 +140,7 @@ res_byage <- res_byage %>% rename("cat1_group"="age5")
 res_byage$cat1 <- "Age"
 
 #-----run crosstabs by sex-----
-sexby <- c("age5","LGB","race3","hispanic","race4","income6","veteran","ccreg","bigcities","hracode")
+sexby <- c("age5","LGB","race3","hispanic","race4","income6","veteran","ccreg")
 res_bysex = rbindlist(lapply(X = as.list(sexby),
                               FUN = function(X){
                                 message(X)
@@ -160,7 +160,7 @@ res_bysex <- res_bysex %>% rename("cat1_group"="sex")
 res_bysex$cat1 <- "Gender"
 
 #-----
-raceby <- c("age5","sex","LGB","income6","veteran","ccreg","bigcities","hracode")
+raceby <- c("age5","sex","LGB","income6","veteran","ccreg")
 res_byrace3 = rbindlist(lapply(X = as.list(raceby),
                              FUN = function(X){
                                message(X)
@@ -218,7 +218,7 @@ res_byhisp <- res_byhisp %>% rename("cat1_group"="hispanic")
 res_byhisp$cat1 <- "Race"
 
 #-----
-lgbby <- c("age5","sex", "race3", "race4", "hispanic", "income6","veteran","ccreg","bigcities","hracode")
+lgbby <- c("age5","sex", "race3", "race4", "hispanic", "income6","veteran","ccreg")
 res_bylgb = rbindlist(lapply(X = as.list(lgbby),
                               FUN = function(X){
                                 message(X)
@@ -238,7 +238,7 @@ res_bylgb <- res_bylgb %>% rename("cat1_group"="LGB")
 res_bylgb$cat1 <- "Sexual orientation"
 
 #-----
-incby <- c("age5","sex", "LGB", "race3", "race4", "hispanic", "veteran","ccreg","bigcities","hracode")
+incby <- c("age5","sex", "LGB", "race3", "race4", "hispanic", "veteran","ccreg")
 res_byinc = rbindlist(lapply(X = as.list(incby),
                              FUN = function(X){
                                message(X)
@@ -258,7 +258,7 @@ res_byinc <- res_byinc %>% rename("cat1_group"="income6")
 res_byinc$cat1 <- "Household Income"
 
 #-----
-vetby <- c("age5","sex", "LGB", "race3", "race4", "hispanic", "income6","ccreg","bigcities","hracode")
+vetby <- c("age5","sex", "LGB", "race3", "race4", "hispanic", "income6","ccreg")
 res_byvet = rbindlist(lapply(X = as.list(vetby),
                              FUN = function(X){
                                message(X)
@@ -298,45 +298,9 @@ res_byreg <- res_byreg %>% rename("cat1_group"="ccreg")
 res_byreg$cat1 <- "Regions"
 
 #-----
-res_bybig = rbindlist(lapply(X = as.list(regby),
-                             FUN = function(X){
-                               message(X)
-                               tempDT <- rads::calc(ph.data = brfskc,
-                                                    what = myvars,
-                                                    year >=2016,
-                                                    by = c("bigcities", X),
-                                                    metrics=c("mean","rse","numerator","denominator"),
-                                                    per=100,
-                                                    win=5,
-                                                    time_var="year",
-                                                    proportion=T)
-                               tempDT[, cat2 := X]
-                               setnames(tempDT, X, "cat2_group")
-                             }), use.names = T)
-res_bybig <- res_bybig %>% rename("cat1_group"="bigcities")
-res_bybig$cat1 <- "Bigcities"
 
-#-----
-res_byhra = rbindlist(lapply(X = as.list(regby),
-                             FUN = function(X){
-                               message(X)
-                               tempDT <- rads::calc(ph.data = brfskc,
-                                                    what = myvars,
-                                                    year >=2016,
-                                                    by = c("hracode", X),
-                                                    metrics=c("mean","rse","numerator","denominator"),
-                                                    per=100,
-                                                    win=5,
-                                                    time_var="year",
-                                                    proportion=T)
-                               tempDT[, cat2 := X]
-                               setnames(tempDT, X, "cat2_group")
-                             }), use.names = T)
-res_byhra <- res_byhra %>% rename("cat1_group"="hracode")
-res_byhra$cat1 <- "Cities/neighborhoods"
-
-result_by <- rbind(res_byage, res_bysex, res_bylgb, res_byrace3, res_byrace4, res_byhisp, res_byinc,
-                   res_byvet, res_byreg, res_bybig, res_byhra)
+result_by <- rbind(res_byage, res_bysex, res_bylgb, res_byrace3, res_byrace4, res_byhisp, 
+                   res_byinc, res_byvet, res_byreg)
 result_by <- subset(result_by, cat1_group!='NA')
 result_by <- subset(result_by, cat1_group!='Other/Unknown')
 result_by <- subset(result_by, cat1_group!='non-Hisp')
@@ -352,8 +316,6 @@ result_by <- result_by %>% mutate(cat2 = case_when(cat2=="age5" ~ "Age",
                                  cat2=="veteran" ~ "Military Service",
                                  cat2=="hispanic" ~"Race", 
                                  cat2=="ccreg" ~"Regions", 
-                                 cat2=="bigcities" ~"Bigcities", 
-                                 cat2=="hracode" ~"Cities/neighborhoods", 
                                  TRUE ~ cat2))
 result_by$tab <-"crosstabs"
 
@@ -363,9 +325,6 @@ result_by <- result_by %>% mutate(year=case_when(variable=="diab2" | variable=="
                             variable=="fnotlast" ~"2018, 2019 & 2020",
                             variable=="SSB" ~"2018-2019"))
 
-save(result2, file='result2.RData')
-save(result_by, file='result_by.RData')
-#load("result_by.RData")
 write.csv(result2, "result2.csv", row.names = F)
 write.csv(result_by, "result_by.csv", row.names = F)
 

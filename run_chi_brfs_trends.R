@@ -1,7 +1,7 @@
 #generate BRFSS trend data
 rm(list=ls())
 pacman::p_load(dplyr, foreign, survey, srvyr, epiDisplay, data.table, janitor, rads, labelled, dtsurvey)
-setwd("c:/R_learning/CHI") 
+setwd("c:/R_learning/CHI_brfss") 
 
 #Read Stata file, can only translate Stata version 12 or earlier, other packages can read later versions
 brfsraw <- read.dta(file="S:/WORK/surveys/brfs/prog_all/kc0020_finalz.dta", warn.missing.labels = FALSE)
@@ -92,11 +92,9 @@ result3$tab <- "trends"
 #-----King County average for significance comparison-----
 res_kc <- subset(result3, subset=result3$cat1=="King County", 
                  select= c("variable", "year",  "mean", "mean_lower", "mean_upper" ))
-
 res_kc <- res_kc %>% rename("kc_result" = "mean", "kc_lower" = "mean_lower", "kc_upper"="mean_upper")
 
 result4 <- merge(x=result3, y=res_kc, by=c("variable", "year"))
-
 result4 <- result4 %>% mutate(comparison_with_kc = case_when(mean_upper < kc_lower ~as.character("lower"), 
                                                              mean_lower > kc_upper ~as.character("higher"), 
                                                              TRUE ~as.character("not different")))

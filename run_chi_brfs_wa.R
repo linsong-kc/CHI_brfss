@@ -1,7 +1,7 @@
 #generate BRFSS data for City Health Profile, no custom data as in CHI
 rm(list=ls())
 pacman::p_load(dplyr, foreign, survey, srvyr, epiDisplay, data.table, rads, labelled, dtsurvey)
-setwd("c:/R_learning/CHI") 
+setwd("c:/R_learning/CHI_brfss") 
 
 #Read Stata file, can only translate Stata version 12 or earlier, other packages can read later versions
 brfs1wa <- read.dta(file="s:/work/surveys/brfs/data/final/wavar0020_v12.dta", warn.missing.labels = FALSE)
