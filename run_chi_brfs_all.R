@@ -32,17 +32,18 @@ res_all <- res_all %>% mutate(cat1_group_alias
             cat1_group == "SE Seattle" ~"Southeast Seattle",
             TRUE ~cat1_group))  
 
-res_all <- res_all %>% mutate(cat1_varname = case_when(cat1 == "King Counyt" ~"kingco", 
+res_all <- res_all %>% mutate(cat1_varname = case_when(cat1 == "King County" ~"kingco",
+                                  cat1 == "Washington State" ~"wastate",                   
                                   cat1 == "Sexual orientation" ~"sexorien",
                                   cat1 == "race3" ~"race3",
                                   cat1 == "race4" ~"race4",
                                   cat1 == "Race"  ~"race3",
-                                  cat1 == "Regions" ~"region",
+                                  cat1 == "Regions" ~"ccreg",
                                   cat1 == "Age" ~"age5",
                                   cat1 == "Cities/neighborhoods" ~"hracode",
                                   cat1 == "Gender" ~"sex",
                                   cat1 == "Household Income" ~"income6",
-                                  cat1 == "Military Service" ~"veteram",
+                                  cat1 == "Military Service" ~"veteran",
                                   cat1 == "Big cities" ~"hra2code", TRUE ~cat1))   
 
 res_all <- res_all %>% mutate(cat1=recode(cat1, "Race"="Hispanic", "race3"="Race", "race4"="Race")) 
@@ -65,17 +66,17 @@ res_all <- res_all %>% mutate(cat2_group_alias
                         TRUE ~cat2_group))
 
 res_all <- res_all %>% mutate(cat2_varname
-                                = case_when(cat2 == "King Counyt" ~"kingco", 
+                                = case_when(cat2 == "King County" ~"kingco",
                                             cat2 == "Sexual orientation" ~"sexorien",
                                             cat2 == "race3" ~"race3",
                                             cat2 == "race4" ~"race4",
                                             cat2 == "Race"  ~"race3",
-                                            cat2 == "Regions" ~"region",
+                                            cat2 == "Regions" ~"ccreg",
                                             cat2 == "Age" ~"age5",
                                             cat2 == "Cities/neighborhoods" ~"hracode",
                                             cat2 == "Gender" ~"sex",
                                             cat2 == "Household Income" ~"income6",
-                                            cat2 == "Military Service" ~"veteram",
+                                            cat2 == "Military Service" ~"veteran",
                                             cat2 == "Big cities" ~"hra2code",
                                             TRUE ~cat2))   
 
