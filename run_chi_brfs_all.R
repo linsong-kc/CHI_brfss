@@ -15,87 +15,103 @@ res_all <- res_all %>% mutate(comparison_with_kc = case_when(tab=='_kingcounty' 
 res_all <- res_all %>% mutate(significance = case_when(tab=='_kingcounty' ~"NA", TRUE ~significance))
 res_all <- res_all %>% mutate(suppression= case_when(denominator < 50 ~as.character("^"), TRUE ~as.character("NA")))
 
+#-----recode cat1
+res_all <- res_all %>% mutate(cat1_group
+                              = case_when(cat1_group == "<$15k" ~"<$15,000", 
+                                          cat1_group == "$75k+" ~"$75,000+",
+                                          TRUE ~cat1_group))  
+
 res_all$cat1_group_alias <- res_all$cat1_group
 res_all <- res_all %>% mutate(cat1_group_alias
-            = case_when(cat1_group == "Beacon/Gtown/S.Park" ~"Beacon Hill/Georgetown/South Park", 
-            cat1_group == "Bellevue-NE" ~"Bellevue-Northeast",
-            cat1_group == "Black Diamond/Enumclaw/SE County" ~"Black Diamond/Enumclaw/Southeast County",
-            cat1_group == "Capitol Hill/E.lake" ~"Capitol Hill/Eastlake",
-            cat1_group == "Fed Way-Central/Military Rd" ~"Federal Way-Central/Military Rd",
-            cat1_group == "Fed Way-Dash Pt" ~"Federal Way-Dash Point/Woodmont",
-            cat1_group == "Kenmore/LFP" ~"Kenmore/Lake Forest Park",
-            cat1_group == "Kent-SE" ~"Kent-Southeast",
-            cat1_group == "Mercer Isle/Pt Cities" ~"Mercer Island/Point Cities",
-            cat1_group == "NE Seattle" ~"Northeast Seattle",
-            cat1_group == "NW Seattle" ~"Northwest Seattle",
-            cat1_group == "QA/Magnolia" ~"Queen Anne/Magnolia",
-            cat1_group == "SE Seattle" ~"Southeast Seattle",
-            TRUE ~cat1_group))  
+                              = case_when(cat1_group == "Beacon/Gtown/S.Park" ~"Beacon Hill/Georgetown/South Park", 
+                                          cat1_group == "Bellevue-NE" ~"Bellevue-Northeast",
+                                          cat1_group == "Black Diamond/Enumclaw/SE County" ~"Black Diamond/Enumclaw/Southeast County",
+                                          cat1_group == "Capitol Hill/E.lake" ~"Capitol Hill/Eastlake",
+                                          cat1_group == "Fed Way-Central/Military Rd" ~"Federal Way-Central/Military Rd",
+                                          cat1_group == "Fed Way-Dash Pt" ~"Federal Way-Dash Point/Woodmont",
+                                          cat1_group == "Kenmore/LFP" ~"Kenmore/Lake Forest Park",
+                                          cat1_group == "Kent-SE" ~"Kent-Southeast",
+                                          cat1_group == "Mercer Isle/Pt Cities" ~"Mercer Island/Point Cities",
+                                          cat1_group == "NE Seattle" ~"Northeast Seattle",
+                                          cat1_group == "NW Seattle" ~"Northwest Seattle",
+                                          cat1_group == "QA/Magnolia" ~"Queen Anne/Magnolia",
+                                          cat1_group == "SE Seattle" ~"Southeast Seattle",
+                                          TRUE ~cat1_group))  
 
 res_all <- res_all %>% mutate(cat1_varname = case_when(cat1 == "King County" ~"kingco",
-                                  cat1 == "Washington State" ~"wastate",                   
-                                  cat1 == "Sexual orientation" ~"sexorien",
-                                  cat1 == "race3" ~"race3",
-                                  cat1 == "race4" ~"race4",
-                                  cat1 == "Race"  ~"race3",
-                                  cat1 == "Regions" ~"ccreg",
-                                  cat1 == "Age" ~"age5",
-                                  cat1 == "Cities/neighborhoods" ~"hracode",
-                                  cat1 == "Gender" ~"sex",
-                                  cat1 == "Household Income" ~"income6",
-                                  cat1 == "Military Service" ~"veteran",
-                                  cat1 == "Big cities" ~"hra2code", TRUE ~cat1))   
+                                                       cat1 == "Washington State" ~"wastate",                   
+                                                       cat1 == "Sexual orientation" ~"sexorien",
+                                                       cat1 == "race3" ~"race3",
+                                                       cat1 == "race4" ~"race4",
+                                                       cat1 == "Race"  ~"race3",
+                                                       cat1 == "Regions" ~"ccreg",
+                                                       cat1 == "Age" ~"age5",
+                                                       cat1 == "Cities/neighborhoods" ~"hracode",
+                                                       cat1 == "Gender" ~"sex",
+                                                       cat1 == "Household Income" ~"income6",
+                                                       cat1 == "Military Service" ~"veteran",
+                                                       cat1 == "Big cities" ~"hra2code", TRUE ~cat1))   
 
-res_all <- res_all %>% mutate(cat1=recode(cat1, "Race"="Hispanic", "race3"="Race", "race4"="Race")) 
+res_all <- res_all %>% mutate(cat1=recode(cat1, "Race"="Ethnicity", "race3"="Race", "race4"="Race")) 
 
+#-----recode cat2
+res_all <- res_all %>% mutate(cat2_group
+                              = case_when(cat2_group == "<$15k" ~"<$15,000", 
+                                          cat2_group == "$75k+" ~"$75,000+",
+                                          TRUE ~cat2_group))  
 res_all$cat2_group_alias <- res_all$cat2_group
 res_all <- res_all %>% mutate(cat2_group_alias
-                      = case_when(cat2_group == "Beacon/Gtown/S.Park" ~"Beacon Hill/Georgetown/South Park", 
-                        cat2_group == "Bellevue-NE" ~"Bellevue-Northeast",
-                        cat2_group == "Black Diamond/Enumclaw/SE County" ~"Black Diamond/Enumclaw/Southeast County",
-                        cat2_group == "Capitol Hill/E.lake" ~"Capitol Hill/Eastlake",
-                        cat2_group == "Fed Way-Central/Military Rd" ~"Federal Way-Central/Military Rd",
-                        cat2_group == "Fed Way-Dash Pt" ~"Federal Way-Dash Point/Woodmont",
-                        cat2_group == "Kenmore/LFP" ~"Kenmore/Lake Forest Park",
-                        cat2_group == "Kent-SE" ~"Kent-Southeast",
-                        cat2_group == "Mercer Isle/Pt Cities" ~"Mercer Island/Point Cities",
-                        cat2_group == "NE Seattle" ~"Northeast Seattle",
-                        cat2_group == "NW Seattle" ~"Northwest Seattle",
-                        cat2_group == "QA/Magnolia" ~"Queen Anne/Magnolia",
-                        cat2_group == "SE Seattle" ~"Southeast Seattle",
-                        TRUE ~cat2_group))
+                              = case_when(cat2_group == "Beacon/Gtown/S.Park" ~"Beacon Hill/Georgetown/South Park", 
+                                          cat2_group == "Bellevue-NE" ~"Bellevue-Northeast",
+                                          cat2_group == "Black Diamond/Enumclaw/SE County" ~"Black Diamond/Enumclaw/Southeast County",
+                                          cat2_group == "Capitol Hill/E.lake" ~"Capitol Hill/Eastlake",
+                                          cat2_group == "Fed Way-Central/Military Rd" ~"Federal Way-Central/Military Rd",
+                                          cat2_group == "Fed Way-Dash Pt" ~"Federal Way-Dash Point/Woodmont",
+                                          cat2_group == "Kenmore/LFP" ~"Kenmore/Lake Forest Park",
+                                          cat2_group == "Kent-SE" ~"Kent-Southeast",
+                                          cat2_group == "Mercer Isle/Pt Cities" ~"Mercer Island/Point Cities",
+                                          cat2_group == "NE Seattle" ~"Northeast Seattle",
+                                          cat2_group == "NW Seattle" ~"Northwest Seattle",
+                                          cat2_group == "QA/Magnolia" ~"Queen Anne/Magnolia",
+                                          cat2_group == "SE Seattle" ~"Southeast Seattle",
+                                          TRUE ~cat2_group))
 
 res_all <- res_all %>% mutate(cat2_varname
-                                = case_when(cat2 == "King County" ~"kingco",
-                                            cat2 == "Sexual orientation" ~"sexorien",
-                                            cat2 == "race3" ~"race3",
-                                            cat2 == "race4" ~"race4",
-                                            cat2 == "Race"  ~"race3",
-                                            cat2 == "Regions" ~"ccreg",
-                                            cat2 == "Age" ~"age5",
-                                            cat2 == "Cities/neighborhoods" ~"hracode",
-                                            cat2 == "Gender" ~"sex",
-                                            cat2 == "Household Income" ~"income6",
-                                            cat2 == "Military Service" ~"veteran",
-                                            cat2 == "Big cities" ~"hra2code",
-                                            TRUE ~cat2))   
+                              = case_when(cat2 == "King County" ~"kingco",
+                                          cat2 == "Sexual orientation" ~"sexorien",
+                                          cat2 == "race3" ~"race3",
+                                          cat2 == "race4" ~"race4",
+                                          cat2 == "Race"  ~"race3",
+                                          cat2 == "Regions" ~"ccreg",
+                                          cat2 == "Age" ~"age5",
+                                          cat2 == "Cities/neighborhoods" ~"hracode",
+                                          cat2 == "Gender" ~"sex",
+                                          cat2 == "Household Income" ~"income6",
+                                          cat2 == "Military Service" ~"veteran",
+                                          cat2 == "Big cities" ~"hra2code",
+                                          TRUE ~cat2))   
 
-res_all <- res_all %>% mutate(cat2= case_when(cat2=="Race" ~"Hispanic",    
-                                              cat2 == "race3" ~"Race", 
-                                              cat2 == "race4" ~"Race", TRUE ~cat2)) 
+res_all <- res_all %>% mutate(cat2=recode(cat2, "Race"="Ethnicity", "race3"="Race", "race4"="Race")) 
 res_all$data_source <- "brfss"
-res_all$chi <- 1
+res_all <- res_all %>% mutate(chi= case_when(cat1 == "Bigcities" ~0, TRUE ~1))
 res_all$time_trends <- ""
 res_all$source_date <- "2021-0915"
 res_all$run_date <- "2022-0215"
 
+res_all$result <- sprintf("%.3f", round(res_all$result, digits=3))
+res_all$lower_bound <- sprintf("%.3f", round(res_all$lower_bound, digits=3))
+res_all$upper_bound <- sprintf("%.3f", round(res_all$upper_bound, digits=3))
+res_all$se <- sprintf("%.3f", round(res_all$se, digits=3))
+res_all$rse <- as.numeric(res_all$rse)
+res_all$rse <- sprintf("%5.1f", round(res_all$rse, digits=1))
+
 res_all <- res_all[, c("data_source", "indicator_key", "tab", "year", 
-                         "cat1", "cat1_group", "cat1_group_alias", "cat1_varname",
-                         "cat2", "cat2_group", "cat2_group_alias", "cat2_varname",
-                         "result", "lower_bound", "upper_bound", "se", "rse",
-                         "comparison_with_kc", "time_trends", "significance", 
-                         "caution", "suppression", "numerator", "denominator",
-                         "chi", "source_date", "run_date")]
+                       "cat1", "cat1_group", "cat1_group_alias", "cat1_varname",
+                       "cat2", "cat2_group", "cat2_group_alias", "cat2_varname",
+                       "result", "lower_bound", "upper_bound", "se", "rse",
+                       "comparison_with_kc", "time_trends", "significance", 
+                       "caution", "suppression", "numerator", "denominator",
+                       "chi", "source_date", "run_date")]
 res_all <-  res_all[order(res_all$indicator_key, res_all$tab, res_all$cat1), ]
 write.csv(res_all, "chi_brfs.csv", row.names = F)
 
