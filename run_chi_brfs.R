@@ -12,7 +12,7 @@ options(max.print= 99999)
 
 kc1221 <- readRDS("//dphcifs/APDE-CDIP/BRFSS/prog_all/kc1221final.rds")
 d1 <- as.data.table(kc1221)
-colnames(d1)[grepl("bmi", colnames(d1))]
+colnames(d1)[grepl("mj", colnames(d1))]
 
 d2 <- d1[, .(year, x_ststr, finalwt1, hra20_name, bigcities, region, income6,  
              age, age7, sex, sexorien, trnsgndr, race3, race4, hispanic, veteran3, 
@@ -21,7 +21,11 @@ d2 <- d1[, .(year, x_ststr, finalwt1, hra20_name, bigcities, region, income6,
              fmd, mjnow, obese, x_bmi5cat, x_veglt1a, pap3yrs, persdoc3, x_pneumo3, smoker1, SSB)]
 
 #-----recode demographic variable
-d2 <- setnames(d2, c("x_denvst3", "hispanic", "income6", "trnsgndr"), c("denvst1", "hisp", "income6b", "trans"))
+d2 <- setnames(d2, c("x_denvst3", "cvdstrk3", "disab2", "medcost1", "mjnow", "persdoc3", "x_pneumo3", "SSB",
+                     "hispanic", "income6", "trnsgndr"),
+                   c("denvst1", "cvdstrok", "disabil", "medcost", "mjpast30", "persdoc", "pneumvac", "ssb",
+                     "hisp", "income6b", "trans"))
+
 d2[, age7:=as.integer(age7)] [, race3:=as.character(race3)] [, race4:=as.character(race4)] [, income6b:=as.character(income6b)] 
 d2[age7==1, age5_v2 :="18-24"] [age7 %in% c(2,3), age5_v2 :="25-44"] [age7 %in% c(4, 5), age5_v2 :="45-64"] [age7==6, age5_v2 :="65-74"] [age7==7, age5_v2 :="75+"]
 d2[sex==1, chi_sex :="Male"] [sex==2, chi_sex :="Female"]
@@ -47,9 +51,9 @@ d2[age>=50 & age<65, age_crc :="50-64"] [age>=65 & age<=75, age_crc :="65-75"] [
 d2[ecignow1==2,  ecignow1 := 1] [ecignow1==3, ecignow1 := 0]
 
 #convert the following varaibles into negative valence
-d2[persdoc3==1,  persdoc3 := 2] [persdoc3==0, persdoc3 := 1] [persdoc3==2, persdoc3 :=0]
+d2[persdoc==1,  persdoc := 2] [persdoc==0, persdoc := 1] [persdoc==2, persdoc :=0]
 d2[cholchk5==1,  cholchk5 := 2] [cholchk5==0, cholchk5 := 1] [cholchk5==2, cholchk5 :=0]
-d2[x_pneumo3==1,  x_pneumo3 := 2] [x_pneumo3==0, x_pneumo3 := 1] [x_pneumo3==2, x_pneumo3 :=0]
+d2[pneumvac==1,  pneumvac := 2] [pneumvac==0, pneumvac := 1] [pneumvac==2, pneumvac :=0]
 d2[x_bmi5cat<=2 | x_bmi5cat==4,  overw1 := 0] [x_bmi5cat==3, overw1 := 1] [is.na(x_bmi5cat), overw1 :=NA]
 
 d2[denvst1==1,  denvst1 := 2] [denvst1==0, denvst1 := 1] [denvst1==2, denvst1 :=0]
@@ -68,9 +72,9 @@ mytable <- function(x, y) {
 }
 
 # apply the mytable function to each combination of columns using lapply
-lapply(d2[, c("asthnow", "cvdheart", "cvdstrk3", "diab2", "disab2", "flushot_v1", "flushot_v2",
-              "genhlth2", "medcost1", "fmd", "obese", "overw1", "persdoc3", "x_pneumo3", "smoker1",
-              "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjnow", "x_veglt1a",
+lapply(d2[, c("asthnow", "cvdheart", "cvdstrok", "diab2", "disabil", "flushot_v1", "flushot_v2",
+              "genhlth2", "medcost", "fmd", "obese", "overw1", "persdoc", "pneumvac", "smoker1",
+              "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjpast30", "x_veglt1a",
               "denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs")], 
        function(x) mytable(d2$year, x))
 
@@ -79,16 +83,16 @@ dt1 <- d2[complete.cases(d2$finalwt1), ]  #drop cases with missing weight
 dt2 <- subset(dt1, chi_sex=="Female")
 
 #indicator lists ("within 2017-2021" variables, "2016, 2018, 2020" variables, and variables for females
-myvar1 <- c("asthnow", "cvdheart", "cvdstrk3", "diab2", "disab2", "flushot_v1", "flushot_v2",
-             "genhlth2", "medcost1", "fmd", "obese", "overw1", "persdoc3", "x_pneumo3", "smoker1",
-             "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjnow", "x_veglt1a", "SSB")
+myvar1 <- c("asthnow", "cvdheart", "cvdstrok", "diab2", "disabil", "flushot_v1", "flushot_v2",
+             "genhlth2", "medcost", "fmd", "obese", "overw1", "persdoc", "pneumvac", "smoker1",
+             "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjpast30", "x_veglt1a", "ssb")
 myvar2 <- c("denvst1", "firearm4")
 myvar3 <- c("x_crcrec")
 myvar4 <- c("mam2yrs")
 myvar5 <- c("pap3yrs")
-myvar6 <- c("asthnow", "cvdheart", "cvdstrk3", "diab2", "disab2", "flushot_v1", "flushot_v2",
-            "genhlth2", "medcost1", "fmd", "obese", "overw1", "persdoc3", "x_pneumo3", "smoker1",
-            "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjnow", "x_veglt1a",
+myvar6 <- c("asthnow", "cvdheart", "cvdstrok", "diab2", "disabil", "flushot_v1", "flushot_v2",
+            "genhlth2", "medcost", "fmd", "obese", "overw1", "persdoc", "pneumvac", "smoker1",
+            "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjpast30", "x_veglt1a",
             "denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs")
 
 byvar1 <- c("all", "age5_v2", "chi_sex", "chi_sexorien_2", "trnsgndr", "race3", "hispanic", "race4", "income6b", "veteran", "hra20_name", "bigcities", "region")
@@ -1146,18 +1150,18 @@ write.xlsx(crossx, "crossx.xlsx", sheetName = "Sheet1", overwrite = T)
 #----------------------------------------
 
 #-----merging demographic and crosstab results
-res2 <- read.xlsx("brfss_demo.xlsx")
-read.xlsx("crossx.xlsx")
+res2 <- read.xlsx("brfss_demo.xlsx", sheet = 1)
+crossx <- read.xlsx("crossx.xlsx", sheet = 1)
 
 resultx <- bind_rows(res2, crossx)
 resultx <- resultx %>% mutate(year = case_when(
-  variable %in% c("asthnow", "cvdheart", "cvdstrk3", "diab2", "disab2", "flushot_v1", "flushot_v2", 
-                  "genhlth2",  "medcost1", "fmd", "obese", "overw1", "persdoc3", "x_pneumo3", "smoker1") ~"2017-2021",
+  variable %in% c("asthnow", "cvdheart", "cvdstrok", "diab2", "disabil", "flushot_v1", "flushot_v2", 
+                  "genhlth2",  "medcost", "fmd", "obese", "overw1", "persdoc", "pneumvac", "smoker1") ~"2017-2021",
   variable %in% c("bphigh", "cholchk5", "x_veglt1a") ~"2017, 2019, & 2021", 
   variable=="ecignow1" ~"2017, 2020, & 2021",
   variable=="fnotlast" ~"2018-2021",
-  variable=="mjnow" ~ "2017-2019, & 2021",
-  variable=="SSB" ~"2018-2019", 
+  variable=="mjpast30" ~ "2017-2019, & 2021",
+  variable=="ssb" ~"2018-2019", 
   variable %in% c("denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs") ~"2017, 2019, & 2021", 
 ))
 tab1(resultx$year, graph=F)
@@ -1171,10 +1175,10 @@ res_kc <- res_kc %>% rename("kc_result" = "mean", "kc_lower" = "mean_lower", "kc
 
 resultx <- merge(resultx, res_kc, by="variable")
 
-
 resultx <- resultx %>% mutate(comparison_with_kc = case_when(mean_upper < kc_lower ~as.character("lower"), 
                                                                mean_lower > kc_upper ~as.character("higher"), 
                                                                TRUE ~as.character("not different")))
+
 resultx <- resultx %>% mutate(significance = case_when(mean_upper < kc_lower ~as.character("*"), 
                                                          mean_lower > kc_upper ~as.character("*"), 
                                                          TRUE ~as.character("")))
@@ -1185,7 +1189,7 @@ resultx <- resultx %>% rename("result"="mean",
 resultx <- resultx[, c("tab", "year", "variable", "cat1", "cat1_varname", "cat1_group", "cat2", "cat2_varname", "cat2_group",
                        "result", "lower_bound", "upper_bound", "se", "rse", "numerator", "denominator",
                        "comparison_with_kc", "significance")]
-resultx <- resultx[order(tab, variable, cat1, cat1_group, year), ]
+resultx <- resultx[order(resultx$tab, resultx$variable, resultx$cat1, resultx$cat1_group, resultx$year), ]
 write.xlsx(resultx, "resultx.xlsx", sheetName = "Sheet1", overwrite = T)
 
 
@@ -1264,11 +1268,18 @@ write.xlsx(trend2, "resultt.xlsx", sheetName = "Sheet1", overwrite = T)
 wa0021 <- readRDS("//dphcifs/APDE-CDIP/BRFSS/WA/wa0021.rds")
 wa1 <- subset(wa0021, year>=2016)
 wa1 <- wa1 %>% rename("denvst1"="x_denvst1")
+
+
+
 wa1 <- wa1[, .(year, x_ststr, x_llcpwt, income6,  
              age, age7, sex, sexorien, race3, race4, hispanic, veteran3, 
              asthnow, bphigh, cholchk5, x_crcrec, cvdheart, cvdstrk3, denvst1, diab2,  
              disab2, ecignow1, firearm4, flushot_v1, flushot_v2, fnotlast, genhlth2, mam2yrs, medcost1,
              fmd, mjnow, obese, x_bmi5cat, x_veglt1a, pap3yrs, persdoc3, x_pneumo3, smoker1)]
+
+wa1 <- setnames(wa1, c("cvdstrk3", "disab2", "medcost1", "mjnow", "persdoc3", "x_pneumo3"),
+               c("cvdstrok", "disabil", "medcost", "mjpast30", "persdoc", "pneumvac"))
+
 wa1[x_bmi5cat<=2 | x_bmi5cat==4,  overw1 := 0] [x_bmi5cat==3, overw1 := 1] [is.na(x_bmi5cat), overw1 :=NA]
 
 wa1$all <- as.character("all")
@@ -1277,9 +1288,9 @@ wa1[sex==1, chi_sex :="Male"] [sex==2, chi_sex :="Female"] [sex>=7, chi_sex :=NA
 wa2 <- subset(wa1, chi_sex=="Female")
 
 #indicator lists ("within 2017-2021" variables, "2016, 2018, 2020" variables, and variables for females, no SSB for WA
-myvar1 <- c("asthnow", "cvdheart", "cvdstrk3", "diab2", "disab2", "flushot_v1", "flushot_v2",
-            "genhlth2", "medcost1", "fmd", "obese", "overw1", "persdoc3", "x_pneumo3", "smoker1",
-            "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjnow", "x_veglt1a")
+myvar1 <- c("asthnow", "cvdheart", "cvdstrok", "diab2", "disabil", "flushot_v1", "flushot_v2",
+            "genhlth2", "medcost", "fmd", "obese", "overw1", "persdoc", "pneumvac", "smoker1",
+            "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjpast30", "x_veglt1a")
 myvar2 <- c("denvst1", "firearm4")
 myvar3 <- c("x_crcrec")
 myvar4 <- c("mam2yrs")
