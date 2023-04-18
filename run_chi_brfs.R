@@ -12,7 +12,7 @@ options(max.print= 99999)
 
 kc1221 <- readRDS("//dphcifs/APDE-CDIP/BRFSS/prog_all/kc1221final.rds")
 d1 <- as.data.table(kc1221)
-colnames(d1)[grepl("mj", colnames(d1))]
+colnames(d1)[grepl("age", colnames(d1))]
 
 d2 <- d1[, .(year, x_ststr, finalwt1, hra20_name, bigcities, region, income6,  
              age, age7, sex, sexorien, trnsgndr, race3, race4, hispanic, veteran3, 
@@ -63,7 +63,10 @@ d2[x_crcrec==1, x_crcrec := 2] [x_crcrec==0, x_crcrec := 1] [x_crcrec==2, x_crcr
 
 d2$all <- "Total"
 d2 <- d2[, !c("age7", "sexorien", "hisp", "veteran3", "trans"), with=F]
-
+d2 <- subset(d2, !is.na(year))
+d2x <- subset(d2, !is.na(flushot_v2))
+temp1 <-table(d2x$year, d2x$chi_sexorien_2, useNA = "always")
+write.csv(temp1, "temp1.csv")
 # ----- Check indicator variables:
 mytable <- function(x, y) {
 #  prop.table(table(x, y), margin=1)
@@ -1162,7 +1165,7 @@ resultx <- resultx %>% mutate(year = case_when(
   variable=="fnotlast" ~"2018-2021",
   variable=="mjpast30" ~ "2017-2019, & 2021",
   variable=="ssb" ~"2018-2019", 
-  variable %in% c("denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs") ~"2017, 2019, & 2021", 
+  variable %in% c("denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs") ~"2016, 2018, & 2020", 
 ))
 tab1(resultx$year, graph=F)
 
