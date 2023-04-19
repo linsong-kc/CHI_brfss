@@ -219,7 +219,7 @@ res_meta <- res_meta %>% mutate(valid_years = case_when(indicator_key=="x_crcrec
                                               indicator_key=="ssb" ~"2018 2019", TRUE ~valid_years))
 
 res_meta$chi <- 1
-res_meta$run_date <- as.Date("2023-02-15")
+res_meta$run_date <- as.character("2023-02-15")
 
 res_meta$latest_year_result <- sprintf("%.3f", round(res_meta$latest_year_result, digits=3))
 res_meta$latest_year  <- as.integer(res_meta$latest_year)

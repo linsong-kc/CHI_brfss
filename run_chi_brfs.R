@@ -13,6 +13,10 @@ options(max.print= 99999)
 kc1221 <- readRDS("//dphcifs/APDE-CDIP/BRFSS/prog_all/kc1221final.rds")
 d1 <- as.data.table(kc1221)
 colnames(d1)[grepl("age", colnames(d1))]
+tapply(d1$finalwt1, d1$year, summary)
+test1 <- d1 %>% group_by(year) %>% dplyr::summarize( count=n(), mean = mean(finalwt1, na.rm = TRUE))
+print.data.frame(test1)
+
 
 d2 <- d1[, .(year, x_ststr, finalwt1, hra20_name, bigcities, region, income6,  
              age, age7, sex, sexorien, trnsgndr, race3, race4, hispanic, veteran3, 
@@ -1221,9 +1225,9 @@ result6a <- rbindlist(
 trend1 <- result6a
 trend1 <- trend1 %>% mutate(cat1 = case_when(byvar=="all" ~"King County",
                                          byvar=="chi_sexorien_2" ~"Sexual orientation",
-                                         byvar=="hispanic" ~"Ethnicity",
-                                         byvar=="race3" ~"Race",
-                                         byvar=="race4" ~"Race",
+                                         byvar=="hispanic" ~"Race/ethnicity",
+                                         byvar=="race3" ~"Race/ethnicity",
+                                         byvar=="race4" ~"Race/ethnicity",
                                          byvar=="region" ~"Regions", TRUE ~ ""))
 
 trend1 <- trend1 %>% mutate(cat1_varname = case_when(byvar=="all" ~"chi_geo_kc",
@@ -1417,11 +1421,11 @@ wares2 <- wares1 %>% rename("cat1_group"="byvar_level")
 wares2 <- wares2 %>% dplyr::select(-c("level"))
 wares2$cat1 <- "Washington State"
 wares2$cat1_group <- "Washington State"
-wares2$cat1_varname <- "chi_geo_wa"
+wares2$cat1_varname <- "wastate"
 wares2$tab <- "_wastate"
 wares2$cat2 <- "Washington State"
 wares2$cat2_group <- "Washington State"
-wares2$cat2_varname <- "chi_geo_wa"
+wares2$cat2_varname <- "wastate"
 
 wares2 <- wares2[, c("variable", "tab", "year", "cat1", "cat1_varname", "cat1_group", "cat2", "cat2_varname", "cat2_group",
                  "result", "se", "lower_bound", "upper_bound", "rse", "numerator", "denominator")]
@@ -1446,8 +1450,9 @@ res_all <- res_all %>% mutate(suppression= case_when(denominator < 50 ~as.charac
 res_all$data_source <- "brfss"
 res_all <- res_all %>% mutate(chi= case_when(cat1 == "Bigcities" ~0, TRUE ~1))
 res_all$time_trends <- ""
-res_all$source_date <- as.Date("2022-09-15")
-res_all$run_date <- as.Date("2023-02-15")
+res_all$source_date <- as.character("2022-09-15")
+res_all$run_date <- as.character("2023-02-15")
+res_all <- subset(res_all, cat1!="Big cities")
 
 res_all <- res_all %>% mutate(year = case_when(year=="2016, 2018, 2020" ~ "2016, 2018 & 2020", 
                                              year=="2017-2019, & 2021"  ~ "2017-2019 & 2021", 
@@ -1456,20 +1461,21 @@ res_all <- res_all %>% mutate(year = case_when(year=="2016, 2018, 2020" ~ "2016,
                                              year=="2017, 2020, & 2021" ~ "2017, 2020 & 2021",
                                              TRUE ~ year))
 
-
-
-res_all <- res_all %>% mutate_at(vars(result, lower_bound, upper_bound, se), list(~ round(., 3)))
+res_all$result <- round(res_all$result, 3)
+res_all$result <- round(res_all$lower_bound, 3)
+res_all$result <- round(res_all$upper_bound, 3)
+res_all$result <- round(res_all$se, 3)
 res_all$rse <- as.numeric(res_all$rse)
 res_all$rse <- sprintf("%5.1f", round(res_all$rse, digits=1))
 res_all <- res_all %>% mutate_at(vars(numerator, denominator, chi), list(~ round(., 0)))
 numvars <- c("result", "lower_bound", "upper_bound", "se", "rse", "numerator", "denominator", "chi")
 res_all[, numvars] <- lapply(res_all[, numvars], as.numeric)
 
-res_all <- res_all[ , c("indicator_key", "tab", "year", "cat1", "cat1_varname", "cat1_group", 
-                        "cat2", "cat2_varname", "cat2_group", "result", "lower_bound", "upper_bound",     
-                        "se", "rse", "numerator", "denominator", "comparison_with_kc",
-                        "significance", "caution",
-                        "suppression", "data_source", "chi", "time_trends", "source_date", "run_date")]
+res_all <- res_all[ , c("data_source","indicator_key", "tab", "year", "cat1", "cat1_group", "cat1_varname", 
+                        "cat2", "cat2_group", "cat2_varname", "result", "lower_bound", "upper_bound",     
+                        "se", "rse", "comparison_with_kc", "time_trends",
+                        "significance", "caution", "suppression", "numerator", "denominator",
+                         "chi",  "source_date", "run_date")]
 
 write.xlsx(res_all, "brfss_all.xlsx", sheetName = "Sheet1", overwrite = T)
 
