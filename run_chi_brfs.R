@@ -1460,9 +1460,9 @@ res_all <- res_all %>% mutate(year = case_when(year=="2016, 2018, 2020" ~ "2016,
                                              TRUE ~ year))
 
 res_all$result <- round(res_all$result, 3)
-res_all$result <- round(res_all$lower_bound, 3)
-res_all$result <- round(res_all$upper_bound, 3)
-res_all$result <- round(res_all$se, 3)
+res_all$lower_bound <- round(res_all$lower_bound, 3)
+res_all$upper_bound <- round(res_all$upper_bound, 3)
+res_all$se <- round(res_all$se, 3)
 res_all$rse <- as.numeric(res_all$rse)
 res_all$rse <- sprintf("%5.1f", round(res_all$rse, digits=1))
 res_all <- res_all %>% mutate_at(vars(numerator, denominator, chi), list(~ round(., 0)))
