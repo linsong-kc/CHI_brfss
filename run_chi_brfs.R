@@ -38,9 +38,8 @@ d2[trans==0, trnsgndr :="Cisgender"] [trans==1, trnsgndr :="Transgender"] [is.na
 
 d2[veteran3==0, veteran :="Non-Veteran"] [veteran3==1, veteran :="Veteran"]
 d2[hisp==0, hispanic :="Non-Hispanic"] [hisp==1, hispanic :="Hispanic"]
-d2 <- d2 %>% mutate(race4 = case_when(race4=="Hisp" ~"Hispanic", race4=="Multiracial" ~"Multiple", TRUE ~race4))
-
-d2 <- d2 %>% mutate(race3 = case_when(race3=="Multiracial" ~"Multiple", TRUE ~race3))
+d2[race4=="Hisp", race4 :="Hispanic"] [race4=="Multiracial", race4 :="Multiple"]
+d2[race3=="Multiracial", race3 :="Multiple"]
 d2 <- d2 %>% mutate(bigcities = case_when(grepl(" city", bigcities) ~bigcities, TRUE ~"x_other"))
 
 #this is no flushot=1, valence in the negative
@@ -1452,7 +1451,6 @@ res_all <- res_all %>% mutate(chi= case_when(cat1 == "Bigcities" ~0, TRUE ~1))
 res_all$time_trends <- ""
 res_all$source_date <- as.character("2022-09-15")
 res_all$run_date <- as.character("2023-02-15")
-res_all <- subset(res_all, cat1!="Big cities")
 
 res_all <- res_all %>% mutate(year = case_when(year=="2016, 2018, 2020" ~ "2016, 2018 & 2020", 
                                              year=="2017-2019, & 2021"  ~ "2017-2019 & 2021", 
@@ -1477,9 +1475,10 @@ res_all <- res_all[ , c("data_source","indicator_key", "tab", "year", "cat1", "c
                         "significance", "caution", "suppression", "numerator", "denominator",
                          "chi",  "source_date", "run_date")]
 
-write.xlsx(res_all, "brfss_all.xlsx", sheetName = "Sheet1", overwrite = T)
+res_allx <- subset(res_all, cat1!="Big cities")
+write.xlsx(res_allx, "brfss_all.xlsx", sheetName = "Sheet1", overwrite = T)
 
-#-----DB connection, send updated data to temp server 51 
+#-----DB connection, send updated data to temp server 51 , bigcities are included.
 db51 <- odbc::dbConnect(odbc::odbc(),
                         Driver = "SQL Server",
                         Server = "KCITSQLUTPDBH51",
