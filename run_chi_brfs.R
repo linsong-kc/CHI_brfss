@@ -12,7 +12,8 @@ options(max.print= 99999)
 
 kc1221 <- readRDS("//dphcifs/APDE-CDIP/BRFSS/prog_all/kc1221final.rds")
 d1 <- as.data.table(kc1221)
-colnames(d1)[grepl("age", colnames(d1))]
+colnames(d1)[grepl("pasta", colnames(d1))]
+
 tapply(d1$finalwt1, d1$year, summary)
 test1 <- d1 %>% group_by(year) %>% dplyr::summarize( count=n(), mean = mean(finalwt1, na.rm = TRUE))
 print.data.frame(test1)
@@ -21,7 +22,7 @@ print.data.frame(test1)
 d2 <- d1[, .(year, x_ststr, finalwt1, hra20_name, bigcities, region, income6,  
              age, age7, sex, sexorien, trnsgndr, race3, race4, hispanic, veteran3, 
              asthnow, bphigh, cholchk5, x_crcrec, cvdheart, cvdstrk3, x_denvst3, diab2,  
-             disab2, ecignow1, firearm4, flushot7, fnotlast, genhlth2, mam2yrs, medcost1,
+             disab2, ecignow1, firearm4, flushot7, fnotlast, genhlth2, mam2yrs, medcost1, x_pastaer,
              fmd, mjnow, obese, x_bmi5cat, x_veglt1a, pap3yrs, persdoc3, x_pneumo3, smoker1, SSB)]
 
 #-----recode demographic variable
@@ -52,6 +53,8 @@ d2[age>=21 & age<45, age_pap :="21-44"] [age>=45 & age<=65, age_pap :="45-65"] [
 d2[age>=50 & age<65, age_mam :="50-64"] [age>=65 & age<75, age_mam :="65-74"] [age<50 | age>=75, age_mam :=NA] 
 d2[age>=50 & age<65, age_crc :="50-64"] [age>=65 & age<=75, age_crc :="65-75"] [age<50 | age>75, age_crc :=NA] 
 d2[ecignow1==2,  ecignow1 := 1] [ecignow1==3, ecignow1 := 0]
+d2[x_pastaer==1, x_pastaer_v1 :=1] [x_pastaer==2, x_pastaer_v1 :=0]
+d2[x_pastaer==1, x_pastaer_v2 :=1] [x_pastaer==2, x_pastaer_v2 :=0] [age>=25, x_pastaer_v2 :=NA]
 
 #convert the following varaibles into negative valence
 d2[persdoc==1,  persdoc := 2] [persdoc==0, persdoc := 1] [persdoc==2, persdoc :=0]
@@ -68,13 +71,13 @@ d2$all <- "Total"
 d2 <- d2[, !c("age7", "sexorien", "hisp", "veteran3", "trans"), with=F]
 d2 <- subset(d2, !is.na(year))
 d2x <- subset(d2, !is.na(flushot_v2))
-temp1 <-table(d2x$year, d2x$chi_sexorien_2, useNA = "always")
-write.csv(temp1, "temp1.csv")
-# ----- Check indicator variables:
+
+# temp1 <-table(d2x$year, d2x$chi_sexorien_2, useNA = "always")
+# write.csv(temp1, "temp1.csv")
+`# ----- Check indicator variables:
 mytable <- function(x, y) {
 #  prop.table(table(x, y), margin=1)
   table(x, y)
-  
 }
 
 # apply the mytable function to each combination of columns using lapply
@@ -99,7 +102,8 @@ myvar5 <- c("pap3yrs")
 myvar6 <- c("asthnow", "cvdheart", "cvdstrok", "diab2", "disabil", "flushot_v1", "flushot_v2",
             "genhlth2", "medcost", "fmd", "obese", "overw1", "persdoc", "pneumvac", "smoker1",
             "bphigh", "cholchk5", "ecignow1", "fnotlast", "mjpast30", "x_veglt1a",
-            "denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs")
+            "denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs", "x_pastaer_v1", "x_pastaer_v2")
+myvar7 <- c("x_pastaer_v1", "x_pastaer_v2")
 
 byvar1 <- c("all", "age5_v2", "chi_sex", "chi_sexorien_2", "trnsgndr", "race3", "hispanic", "race4", "income6b", "veteran", "hra20_name", "bigcities", "region")
 byvar3 <- c("all", "age_crc", "chi_sex", "chi_sexorien_2", "race3", "hispanic", "race4", "income6b", "veteran", "hra20_name", "bigcities", "region")
@@ -113,6 +117,7 @@ mygrid3 <- data.frame(expand.grid(myvars = myvar3, byvars = byvar3))
 mygrid4 <- data.frame(expand.grid(myvars = myvar4, byvars = byvar4))
 mygrid5 <- data.frame(expand.grid(myvars = myvar5, byvars = byvar5))
 mygrid6 <- data.frame(expand.grid(myvars = myvar6, byvars = byvar6))
+mygrid7 <- data.frame(expand.grid(myvars = myvar7, byvars = byvar1))
 
 options(survey.lonely.psu = "adjust")
 brfs1 <- dtsurvey(DT=dt1, psu=NULL, weight= "finalwt1", strata="x_ststr")
@@ -218,8 +223,30 @@ result5a <- rbindlist(
   use.names = T, fill = T
 )
 
-res1 <- bind_rows(result1a, result2a, result3a, result4a, result5a)
+#-----run 2015, 2017, 2019 data
+result7.function <- function(X){
+  temp <- calc(ph.data = brfs1,
+               what = paste0(mygrid7[X, ]$myvars),
+               year==2015 | year==2017 | year==2019,
+               metrics = c("mean", "rse", "numerator", "denominator"),
+               per = 100, time_var = "year", proportion = T,
+               by=paste0(mygrid7[X, ]$byvars))  
+  temp[, byvar := paste0(mygrid7[X, ]$byvars)]
+  setnames(temp,  paste0(mygrid7[X, ]$byvars), "byvar_level")
+  setcolorder(temp, c("variable", "level", "byvar", "byvar_level"))
+  return(temp)
+}
+
+result7a <- rbindlist(
+  lapply(X = as.list(seq(1, nrow(mygrid7))), result7.function), 
+  use.names = T, fill = T
+)
+result7a <- result7a[!(result7a$variable == "x_pastaer_v2" & result7a$byvar=="age5_v2")]
+
+res1 <- bind_rows(result1a, result2a, result3a, result4a, result5a, result7a)
 res2 <- res1[!(res1$variable == "x_crcrec" & res1$byvar == "age5_v2")]
+res2 <- res2[!is.na(byvar_level)]
+
 res2 <- res2 %>% rename("cat1_group"="byvar_level")
 res2 <- res2 %>% dplyr::select(-c("level"))
 
@@ -239,8 +266,9 @@ res2 <- res2 %>% mutate(cat1 = case_when(byvar=="all" ~"King County",
 
 res2 <- res2 %>% mutate(cat1_varname = case_when(byvar=="all" ~"chi_geo_kc",
                                                byvar=="hispanic" ~"race3",
-                                               byvar=="trnsgndr" ~"Transgender",
-                                               byvar=="region" ~"chi_geo_region", TRUE ~ byvar))
+                                               byvar=="trnsgndr" ~"Transgender", 
+                                               byvar=="region" ~"chi_geo_region",
+                                               TRUE ~ byvar))
 
 res2 <- res2 %>% mutate(cat1_group = case_when(byvar=="all" ~"King County", TRUE ~ cat1_group))
                                                
@@ -1105,20 +1133,201 @@ res_byreg = rbindlist(lapply(X = as.list(by_reg),
 res_byreg <- res_byreg %>% rename("cat1_group"="region")
 res_byreg[, ':=' (cat1 = 'Regions', cat1_varname ='chi_geo_region')]
 
-#-----combined all crosstab results: hra20 and bigcities are not run for crosstabs, LGB crosstab sample size are too small
 cross5 <- rbind(res_byage, res_bylgb, res_bytns, res_byrace3, res_byrace4, res_byhisp, res_byinc, res_byvet, res_byreg)
 cross5$year <- as.character("2016, 2018, 2020")
 write.xlsx(cross5, "cross5.xlsx", sheetName = "Sheet1", overwrite = T)
 
+##-----run crosstab7-------
+rm(list=ls(pattern="^res_by"))
+rm(list=ls(pattern="^by_"))
+
+by_age5 <- c("chi_sex", "chi_sexorien_2", "race3", "hispanic", "race4", "income6b", "veteran", "region")
+by_sex <-  c("age5_v2", "chi_sexorien_2", "race3", "hispanic", "race4", "income6b", "veteran", "region")
+by_lgb <- c("age5_v2", "chi_sex", "race3", "hispanic", "race4", "income6b", "veteran", "region")
+by_tns <- c("age5_v2", "chi_sex", "race3", "hispanic", "race4", "income6b", "veteran", "region")
+by_race <- c("age5_v2", "chi_sex", "chi_sexorien_2", "income6b", "veteran", "region")
+by_inc <- c("age5_v2", "chi_sex", "chi_sexorien_2", "race3", "hispanic", "race4", "veteran", "region")
+by_vet <- c("age5_v2", "chi_sex", "chi_sexorien_2", "race3", "hispanic", "race4", "income6b", "region")
+by_reg <- c("age5_v2", "chi_sex", "chi_sexorien_2", "chi_sexorien_2", "race3", "hispanic", "race4", "income6b", "veteran")
+
+#------indicators in brfs7, mygrid7 (myvar2 and brfs1)
+#-----1. by age
+res_byage = rbindlist(lapply(X = as.list(by_age5),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("age5_v2", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_byage <- res_byage %>% rename("cat1_group"="age5_v2")
+res_byage[, ':=' (cat1 = 'Age', cat1_varname ='age5_v2')]
+
+#-----2. by sex
+res_bysex = rbindlist(lapply(X = as.list(by_sex),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("chi_sex", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_bysex <- res_bysex %>% rename("cat1_group"="chi_sex")
+res_bysex[, ':=' (cat1 = 'Gender', cat1_varname ='chi_sex')]
+
+#-----3. by sexual orientation
+res_bylgb = rbindlist(lapply(X = as.list(by_lgb),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("chi_sexorien_2", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_bylgb <- res_bylgb %>% rename("cat1_group"="chi_sexorien_2")
+res_bylgb[, ':=' (cat1 = 'Sexual orientation', cat1_varname ='chi_sexorien_2')]
+
+#-----3b. by trnsgndr
+res_bytns = rbindlist(lapply(X = as.list(by_tns),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("trnsgndr", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_bytns <- res_bytns %>% rename("cat1_group"="trnsgndr")
+res_bytns[, ':=' (cat1 = 'Transgender', cat1_varname ='transgender')]
+
+#-----4. by race3, excluded chi_sexorien_2 because of small sample size
+res_byrace3 = rbindlist(lapply(X = as.list(by_race),
+                               FUN = function(X){
+                                 message(X)
+                                 tempDT <- rads::calc(ph.data = brfs1,
+                                                      what = myvar7,
+                                                      year == 2015 | year==2017 | year==2019,
+                                                      by = c("race3", X),
+                                                      metrics=c("mean","rse","numerator","denominator"),
+                                                      per=100, win=5, time_var="year", proportion=T)
+                                 tempDT[, cat2 := X]
+                                 setnames(tempDT, X, "cat2_group")
+                               }), use.names = T)
+res_byrace3 <- res_byrace3 %>% rename("cat1_group"="race3")
+res_byrace3[, ':=' (cat1 = 'Race', cat1_varname ='race3')]
+
+#-----5. by race4
+res_byrace4 = rbindlist(lapply(X = as.list(by_race),
+                               FUN = function(X){
+                                 message(X)
+                                 tempDT <- rads::calc(ph.data = brfs1,
+                                                      what = myvar7,
+                                                      year == 2015 | year==2017 | year==2019,
+                                                      by = c("race4", X),
+                                                      metrics=c("mean","rse","numerator","denominator"),
+                                                      per=100, win=5, time_var="year", proportion=T)
+                                 tempDT[, cat2 := X]
+                                 setnames(tempDT, X, "cat2_group")
+                               }), use.names = T)
+res_byrace4 <- res_byrace4 %>% rename("cat1_group"="race4")
+res_byrace4[, ':=' (cat1 = 'Race', cat1_varname ='race4')]
+
+#-----6. by hispanic
+res_byhisp = rbindlist(lapply(X = as.list(by_race),
+                              FUN = function(X){
+                                message(X)
+                                tempDT <- rads::calc(ph.data = brfs1,
+                                                     what = myvar7,
+                                                     year == 2015 | year==2017 | year==2019,
+                                                     by = c("hispanic", X),
+                                                     metrics=c("mean","rse","numerator","denominator"),
+                                                     per=100, win=5, time_var="year", proportion=T)
+                                tempDT[, cat2 := X]
+                                setnames(tempDT, X, "cat2_group")
+                              }), use.names = T)
+res_byhisp <- res_byhisp %>% rename("cat1_group"="hispanic")
+res_byhisp[, ':=' (cat1 = 'Ethnicity', cat1_varname ='hispanic')]
+
+#-----7. by income6b, excluded chi_sexorien_2
+res_byinc = rbindlist(lapply(X = as.list(by_inc),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("income6b", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_byinc <- res_byinc %>% rename("cat1_group"="income6b")
+res_byinc[, ':=' (cat1 = 'Household income', cat1_varname ='income6b')]
+
+#-----8. by veteran status, excluded chi_sexorien_2
+res_byvet = rbindlist(lapply(X = as.list(by_vet),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("veteran", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_byvet <- res_byvet %>% rename("cat1_group"="veteran")
+res_byvet[, ':=' (cat1 = 'Military Service', cat1_varname ='veteran')]
+
+#-----9. by region
+res_byreg = rbindlist(lapply(X = as.list(by_reg),
+                             FUN = function(X){
+                               message(X)
+                               tempDT <- rads::calc(ph.data = brfs1,
+                                                    what = myvar7,
+                                                    year == 2015 | year==2017 | year==2019,
+                                                    by = c("region", X),
+                                                    metrics=c("mean","rse","numerator","denominator"),
+                                                    per=100, win=5, time_var="year", proportion=T)
+                               tempDT[, cat2 := X]
+                               setnames(tempDT, X, "cat2_group")
+                             }), use.names = T)
+res_byreg <- res_byreg %>% rename("cat1_group"="region")
+res_byreg[, ':=' (cat1 = 'Regions', cat1_varname ='chi_geo_region')]
+
+cross7 <- rbind(res_byage, res_bysex, res_bylgb, res_bytns, res_byrace3, res_byrace4, res_byhisp, res_byinc, res_byvet, res_byreg)
+cross7$year <- as.character("2015, 2017, 2019")
+cross7 <- cross7[!(cross7$variable == "x_pastaer_v2" & cross7$cat1=="Age")]
+write.xlsx(cross7, "cross7.xlsx", sheetName = "Sheet1", overwrite = T)
+
+
+#-----combined all crosstab results: hra20 and bigcities are not run for crosstabs, LGB crosstab sample size are too small
 cross1 <- read.xlsx("cross1.xlsx")
 cross2 <- read.xlsx("cross2.xlsx")
 cross3 <- read.xlsx("cross3.xlsx")
 cross4 <- read.xlsx("cross4.xlsx")
 cross5 <- read.xlsx("cross5.xlsx")
+cross7 <- read.xlsx("cross7.xlsx")
 
 
 #-----merging crosstab results
-crossx <- bind_rows(cross1, cross2, cross3, cross4, cross5)
+crossx <- bind_rows(cross1, cross2, cross3, cross4, cross5, cross7)
 crossx <- subset(crossx, !(cat1_group %in% c("Non-Hispanic", "NA", "Other/unknown", "Other", "x_other", NA)))
 crossx <- subset(crossx, !(cat2_group %in% c("Non-Hispanic", "NA", "Other/unknown", "Other", "x_other", NA)))
 
@@ -1168,7 +1377,9 @@ resultx <- resultx %>% mutate(year = case_when(
   variable=="fnotlast" ~"2018-2021",
   variable=="mjpast30" ~ "2017-2019, & 2021",
   variable=="ssb" ~"2018-2019", 
-  variable %in% c("denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs") ~"2016, 2018, & 2020", 
+  variable %in% c("denvst1", "firearm4", "x_crcrec", "mam2yrs", "pap3yrs") ~"2016, 2018, & 2020",
+  variable %in% c("x_pastaer_v1", "x_pastaer_v2") ~"2015, 2017, & 2019", 
+  
 ))
 tab1(resultx$year, graph=F)
 
@@ -1197,7 +1408,6 @@ resultx <- resultx[, c("tab", "year", "variable", "cat1", "cat1_varname", "cat1_
                        "comparison_with_kc", "significance")]
 resultx <- resultx[order(resultx$tab, resultx$variable, resultx$cat1, resultx$cat1_group, resultx$year), ]
 write.xlsx(resultx, "resultx.xlsx", sheetName = "Sheet1", overwrite = T)
-
 
 #-----Trend analysis-----
 result6.function <- function(X){
@@ -1231,7 +1441,8 @@ trend1 <- trend1 %>% mutate(cat1 = case_when(byvar=="all" ~"King County",
 
 trend1 <- trend1 %>% mutate(cat1_varname = case_when(byvar=="all" ~"chi_geo_kc",
                                                  byvar=="hispanic" ~"race3",
-                                                 byvar=="region" ~"chi_geo_region", TRUE ~ byvar))
+                                                 byvar=="region" ~"chi_geo_region",
+                                                 TRUE ~ byvar))
 
 
 trend1 <- trend1 %>% rename("cat1_group"="byvar_level")
@@ -1272,24 +1483,25 @@ write.xlsx(trend2, "resultt.xlsx", sheetName = "Sheet1", overwrite = T)
 
 #-----WA State data-----
 wa0021 <- readRDS("//dphcifs/APDE-CDIP/BRFSS/WA/wa0021.rds")
-wa1 <- subset(wa0021, year>=2016)
-wa1 <- wa1 %>% rename("denvst1"="x_denvst1")
-
-
+wa1 <- subset(wa0021, year>=2015)
+colnames(wa1)[grepl("pa", colnames(wa1))]
+wa1 <- wa1 %>% rename("denvst1"="x_denvst1", "x_pastaer_v1" = "x_pastae1")
+wa1 <- wa1 %>% mutate(x_pastaer_v2 = case_when(age<25 ~x_pastaer_v1, TRUE ~NA_real_))
 
 wa1 <- wa1[, .(year, x_ststr, x_llcpwt, income6,  
              age, age7, sex, sexorien, race3, race4, hispanic, veteran3, 
              asthnow, bphigh, cholchk5, x_crcrec, cvdheart, cvdstrk3, denvst1, diab2,  
              disab2, ecignow1, firearm4, flushot_v1, flushot_v2, fnotlast, genhlth2, mam2yrs, medcost1,
-             fmd, mjnow, obese, x_bmi5cat, x_veglt1a, pap3yrs, persdoc3, x_pneumo3, smoker1)]
+             fmd, mjnow, obese, x_bmi5cat, x_veglt1a, pap3yrs, persdoc3, x_pneumo3, smoker1, x_pastaer_v1, x_pastaer_v2)]
 
+setDT(wa1)
 wa1 <- setnames(wa1, c("cvdstrk3", "disab2", "medcost1", "mjnow", "persdoc3", "x_pneumo3"),
                c("cvdstrok", "disabil", "medcost", "mjpast30", "persdoc", "pneumvac"))
 
 wa1[x_bmi5cat<=2 | x_bmi5cat==4,  overw1 := 0] [x_bmi5cat==3, overw1 := 1] [is.na(x_bmi5cat), overw1 :=NA]
+wa1[x_pastaer_v1==2,  x_pastaer_v1 := 0] [x_pastaer_v2==2, x_pastaer_v2 := 0]
 
 wa1$all <- as.character("all")
-setDT(wa1)
 wa1[sex==1, chi_sex :="Male"] [sex==2, chi_sex :="Female"] [sex>=7, chi_sex :=NA]
 wa2 <- subset(wa1, chi_sex=="Female")
 
@@ -1301,7 +1513,7 @@ myvar2 <- c("denvst1", "firearm4")
 myvar3 <- c("x_crcrec")
 myvar4 <- c("mam2yrs")
 myvar5 <- c("pap3yrs")
-
+myvar7 <- c("x_pastaer_v1", "x_pastaer_v2")
 byvar1 <- c("all")
 
 mygrid1 <- data.frame(expand.grid(myvars = myvar1, byvars = byvar1))
@@ -1309,6 +1521,7 @@ mygrid2 <- data.frame(expand.grid(myvars = myvar2, byvars = byvar1))
 mygrid3 <- data.frame(expand.grid(myvars = myvar3, byvars = byvar1))
 mygrid4 <- data.frame(expand.grid(myvars = myvar4, byvars = byvar1))
 mygrid5 <- data.frame(expand.grid(myvars = myvar5, byvars = byvar1))
+mygrid7 <- data.frame(expand.grid(myvars = myvar7, byvars = byvar1))
 
 options(survey.lonely.psu = "adjust")
 wabrfs1 <- dtsurvey(DT=wa1, psu=NULL, weight= "x_llcpwt", strata="x_ststr")
@@ -1356,6 +1569,27 @@ result2a <- rbindlist(
   lapply(X = as.list(seq(1, nrow(mygrid2))), result2.function), 
   use.names = T, fill = T
 )
+
+
+#-----run 2015, 2017, 2019 data
+result7.function <- function(X){
+  temp <- calc(ph.data = wabrfs1,
+               what = paste0(mygrid7[X, ]$myvars),
+               year==2015 | year==2017 | year==2019,
+               metrics = c("mean", "rse", "numerator", "denominator"),
+               per = 100, time_var = "year", proportion = T,
+               by=paste0(mygrid7[X, ]$byvars))  
+  temp[, byvar := paste0(mygrid7[X, ]$byvars)]
+  setnames(temp,  paste0(mygrid7[X, ]$byvars), "byvar_level")
+  setcolorder(temp, c("variable", "level", "byvar", "byvar_level"))
+  return(temp)
+}
+
+result7a <- rbindlist(
+  lapply(X = as.list(seq(1, nrow(mygrid7))), result7.function), 
+  use.names = T, fill = T
+)
+
 
 #-----run CRC screening data
 result3.function <- function(X){
@@ -1414,7 +1648,7 @@ result5a <- rbindlist(
   use.names = T, fill = T
 )
 
-wares1 <- bind_rows(result1a, result2a, result3a, result4a, result5a)
+wares1 <- bind_rows(result1a, result2a, result3a, result4a, result5a, result7a)
 wares1 <- wares1 %>% rename("result"="mean", "se"="mean_se", "lower_bound"="mean_lower", "upper_bound"="mean_upper")
 wares2 <- wares1 %>% rename("cat1_group"="byvar_level")
 wares2 <- wares2 %>% dplyr::select(-c("level"))
@@ -1439,8 +1673,18 @@ wares2 <- read.xlsx("brfss_wa.xlsx")
 brfsall <- bind_rows(resultx, trend2, wares2)
 res_all <- brfsall %>% rename("indicator_key"="variable")
 
-res_all <- res_all %>% mutate(caution = case_when(rse >=30 ~as.character("!"), TRUE ~as.character("")))
-res_all[which(res_all$denominator < 50), c("result", "lower_bound", "upper_bound")] <- NA
+res_all$result <-      round(res_all$result, 3)
+res_all$lower_bound <- round(res_all$lower_bound, 3)
+res_all$upper_bound <- round(res_all$upper_bound, 3)
+res_all$se <-          round(res_all$se, 3)
+res_all <- res_all %>% mutate(rse = case_when(is.na(rse) ~NA_real_, TRUE ~rse))
+res_all$rse <-          round(res_all$rse, 1)
+
+#res_all$rse <- sprintf("%5.1f", round(res_all$rse, digits=1))
+res_all <- res_all %>% mutate_at(vars(numerator, denominator, chi), list(~ round(., 0)))
+
+res_all <- res_all %>% mutate(caution = case_when(rse >=30.0 ~as.character("!"), TRUE ~as.character("")))
+res_all[which(res_all$denominator < 50), c("result", "lower_bound", "upper_bound", "se", "rse")] <- NA
 
 res_all <- res_all %>% mutate(comparison_with_kc = case_when(tab=='_kingcounty' ~"NA", TRUE ~comparison_with_kc))
 res_all <- res_all %>% mutate(significance = case_when(tab=='_kingcounty' ~"NA", TRUE ~significance))
@@ -1451,6 +1695,9 @@ res_all <- res_all %>% mutate(chi= case_when(cat1 == "Bigcities" ~0, TRUE ~1))
 res_all$time_trends <- ""
 res_all$source_date <- as.character("2022-09-15")
 res_all$run_date <- as.character("2023-02-15")
+#res_all$rse <- as.numeric(format(round(res_all$rse,1), nsmall =1))
+
+
 
 res_all <- res_all %>% mutate(year = case_when(year=="2016, 2018, 2020" ~ "2016, 2018 & 2020", 
                                              year=="2017-2019, & 2021"  ~ "2017-2019 & 2021", 
@@ -1459,15 +1706,6 @@ res_all <- res_all %>% mutate(year = case_when(year=="2016, 2018, 2020" ~ "2016,
                                              year=="2017, 2020, & 2021" ~ "2017, 2020 & 2021",
                                              TRUE ~ year))
 
-res_all$result <- round(res_all$result, 3)
-res_all$lower_bound <- round(res_all$lower_bound, 3)
-res_all$upper_bound <- round(res_all$upper_bound, 3)
-res_all$se <- round(res_all$se, 3)
-res_all$rse <- as.numeric(res_all$rse)
-res_all$rse <- sprintf("%5.1f", round(res_all$rse, digits=1))
-res_all <- res_all %>% mutate_at(vars(numerator, denominator, chi), list(~ round(., 0)))
-numvars <- c("result", "lower_bound", "upper_bound", "se", "rse", "numerator", "denominator", "chi")
-res_all[, numvars] <- lapply(res_all[, numvars], as.numeric)
 
 res_all <- res_all[ , c("data_source","indicator_key", "tab", "year", "cat1", "cat1_group", "cat1_varname", 
                         "cat2", "cat2_group", "cat2_varname", "result", "lower_bound", "upper_bound",     
@@ -1486,3 +1724,4 @@ db51 <- odbc::dbConnect(odbc::odbc(),
 
 dbWriteTable(db51, Id(schema = "APDE_WIP", table = "brfss_result2023"), res_all, overwrite = T)
 DBI::dbDisconnect(db51)
+#Note: after QA, import the above table and meta table from server 51 in SQL database 50
